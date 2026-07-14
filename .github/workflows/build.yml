@@ -18,6 +18,7 @@ jobs:
         id: buildozer
         with:
           buildozer_version: stable
+          docker_image: ghcr.io/artemsbulgakov/buildozer:ubuntu-22.04
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
