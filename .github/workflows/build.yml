@@ -8,19 +8,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-
     steps:
       - name: Checkout репозитория
         uses: actions/checkout@v4
 
-      - name: Build with Buildozer
+      - name: Сборка через Buildozer
         uses: ArtemSBulgakov/buildozer-action@v1
         id: buildozer
         with:
           buildozer_version: stable
-          docker_image: ghcr.io/artemsbulgakov/buildozer:ubuntu-22.04
 
-      - name: Upload APK
+      - name: Загрузить APK как артефакт
         uses: actions/upload-artifact@v4
         with:
           name: screencast-apk
