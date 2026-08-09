@@ -1,0 +1,58 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout репозитория
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Установка системных зависимостей
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk python3-pip autoconf libtool \
+            pkg-config zlib1g-dev libncurses6 libncursesw6 \
+            cmake libffi-dev libssl-dev \
+            libsqlite3-dev libbz2-dev liblzma-dev
+
+      - name: Установка Python-зависимостей
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.37
+
+      - name: Проверка файлов проекта
+        run: |
+          echo "=== Файлы в корне ==="
+          ls -la
+          echo "=== Проверка buildozer.spec ==="
+          if [ ! -f "buildozer.spec" ]; then
+            echo "❌ buildozer.spec не найден!"
+            exit 1
+          fi
+          if ! grep -q '^\[app\]' buildozer.spec; then
+            echo "❌ buildozer.spec не содержит секцию [app]"
+            cat buildozer.spec
+            exit 1
+          fi
+          echo "✅ buildozer.spec валиден"
+
+      - name: Сборка APK
+        run: |
+          buildozer -v android debug
+
+      - name: Загрузить APK как артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: screencast-apk
+          path: bin/*.apk
