@@ -1,43 +1,57 @@
-name: Build APK
+name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout репозитория
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Установка системных зависимостей
+      - name: Install buildozer dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk python3-pip autoconf libtool \
-            pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo5 cmake libffi-dev libssl-dev \
-            libsqlite3-dev libbz2-dev liblzma-dev
+            python3-pip build-essential git \
+            zip unzip openjdk-17-jdk autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 \
+            cmake libffi-dev libssl-dev automake
 
-      - name: Установка Python-зависимостей
+      - name: Install buildozer
         run: |
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.37
+          pip install --upgrade buildozer cython virtualenv
 
-      - name: Сборка APK
+      - name: Verify buildozer.spec
         run: |
-          cd $GITHUB_WORKSPACE
-          yes | buildozer -v android debug
+          if [ ! -f buildozer.spec ]; then
+            echo "ERROR: buildozer.spec not found!"
+            exit 1
+          fi
+          if ! grep -q '^\[app\]' buildozer.spec; then
+            echo "ERROR: buildozer.spec missing [app] section!"
+            echo "First 5 lines of file:"
+            head -n 5 buildozer.spec
+            exit 1
+          fi
+          echo "buildozer.spec is valid."
 
-      - name: Загрузить APK как артефакт
+      - name: Build APK
+        run: |
+          buildozer android debug
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: screencast-apk
+          name: screencast-pro-apk
           path: bin/*.apk
